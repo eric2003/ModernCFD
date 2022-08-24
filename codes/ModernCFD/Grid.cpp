@@ -68,7 +68,7 @@ void Geom::GenerateGrid( CfdPara * cfd_para )
         {
             int istart = ip * ( this->ni - 1 );
             float * source_start = this->xcoor_global + istart;
-            MPI_Send(source_start, this->ni_total, MPI_FLOAT, ip, 0, MPI_COMM_WORLD );
+            MPI_Send( source_start, this->ni_total, MPI_FLOAT, ip, 0, MPI_COMM_WORLD );
         }
     }
     else
