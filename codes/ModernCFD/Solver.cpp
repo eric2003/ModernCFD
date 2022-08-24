@@ -5,6 +5,7 @@
 #include <mpi.h>
 #include "Cmpi.h"
 #include "Grid.h"
+#include "Geom.h"
 #include "CfdPara.h"
 #include "matplotlibcppModified.h"
 namespace plt = matplotlibcpp;
@@ -115,7 +116,6 @@ void Solver::SolveField( CfdPara * cfd_para, Geom * geom )
             std::printf(" iStep = %d, nStep = %d \n", n + 1, cfd_para->nt);
         }
 
-        //this->Boundary( q, geom->xcoor, geom->bcSolver );
         this->Boundary( q, geom );
         for ( int i = 0; i < geom->ni_total; ++ i )
         {
@@ -135,11 +135,11 @@ void Solver::Boundary( float * q, Geom * geom )
     //physical boundary
     int nBFace = bcSolver->GetNBFace();
     //std::printf(" Boundary zoneID = %d nBFace = %d\n", bcSolver->zoneId, nBFace);
-    for ( int i = 0; i < nBFace; ++ i )
+    for ( int iface = 0; iface < nBFace; ++ iface )
     {
-        int bctype = bcSolver->bctypes[ i ];
-        int ghostcell_id = bcSolver->bc_ghostcells[ i ];
-        int bc_faceid = bcSolver->bc_faceids[ i ];
+        int bctype = bcSolver->bctypes[ iface ];
+        int ghostcell_id = bcSolver->bc_ghostcells[ iface ];
+        int bc_faceid = bcSolver->bc_faceids[ iface ];
         if ( bctype == BCInterface ) continue;
         if ( bctype == BCInflow )
         {

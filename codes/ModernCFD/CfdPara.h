@@ -6,22 +6,20 @@
 
 #define SMALL 1.0e-10
 
+class Geom;
+
 class CfdPara
 {
 public:
     CfdPara();
     ~CfdPara();
 public:
-    void Init();
+    void Init( Geom * geom );
 public:
     int nt;
     float cfl;
     float simu_time;
-    float xlen;
-    float dx;
     float cspeed;
     float dt;
     float fnt;
-    float xmin, xmax;
-
 };

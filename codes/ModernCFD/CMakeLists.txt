@@ -70,6 +70,7 @@ endif()
 
 set( HEADER_LIST 
     Grid.h
+    Geom.h
     Cmpi.h
     CfdPara.h
     Simu.h
@@ -82,6 +83,7 @@ set( HEADER_LIST
 set( SRC_LIST 
     main.cpp
     Grid.cpp
+    Geom.cpp
     Cmpi.cpp
     CfdPara.cpp
     Simu.cpp

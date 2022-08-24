@@ -1,5 +1,5 @@
 #include "Simu.h"
-#include "Grid.h"
+#include "Geom.h"
 #include "Solver.h"
 #include "Cmpi.h"
 #include "CfdPara.h"
@@ -20,14 +20,13 @@ void Simu::Init(int argc, char **argv)
 
 void Simu::Run()
 {
-    //cfd parameter
-    CfdPara * cfd_para = new CfdPara{};
-    cfd_para->Init();
-
-    int nZones = Cmpi::nproc;
     Geom * geom = new Geom{};
     geom->Init();
-    geom->GenerateGrid( cfd_para );
+    geom->GenerateGrid();
+
+    //cfd parameter
+    CfdPara * cfd_para = new CfdPara{};
+    cfd_para->Init( geom );
 
     Solver * solver = new Solver{};
     solver->Run( cfd_para, geom );

@@ -16,30 +16,7 @@ public:
 };
 
 class BoundarySolver;
-class Geom
-{
-public:
-    Geom();
-    ~Geom();
-public:
-    void Init();
-    void GenerateGrid( CfdPara * cfd_para );
-public:
-    int zoneId;
-    int nZones;
-    int ni_ghost;
-    int ni_global;
-    int ni_global_total;
-    int ni;
-    int ni_total;
-    float * xcoor_global;
-    float * xcoor;
-public:
-    BoundarySolver * bcSolver;
-};
-
 class InterfaceSolver;
-void GenerateGrid( int ni, float xmin, float xmax, float * xcoor );
 
 const int BCInterface = -1;
 const int BCInflow = 1;
