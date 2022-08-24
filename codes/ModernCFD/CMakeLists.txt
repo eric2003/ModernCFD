@@ -71,6 +71,7 @@ endif()
 set( HEADER_LIST 
     Grid.h
     Cmpi.h
+    CfdPara.h
     Simu.h
     Solver.h
     GpuSimu.h
@@ -82,6 +83,7 @@ set( SRC_LIST
     main.cpp
     Grid.cpp
     Cmpi.cpp
+    CfdPara.cpp
     Simu.cpp
     Solver.cpp
     GpuSimu.cpp

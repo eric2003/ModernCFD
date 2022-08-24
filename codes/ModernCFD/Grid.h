@@ -4,29 +4,7 @@
 #include <map>
 #include <string>
 
-#define SMALL 1.0e-10
-
-
-class CfdPara
-{
-public:
-    CfdPara();
-    ~CfdPara();
-public:
-    void Init();
-public:
-    int nt;
-    float cfl;
-    float simu_time;
-    float xlen;
-    float dx;
-    float cspeed;
-    float dt;
-    float fnt;
-    float xmin, xmax;
-
-};
-
+class CfdPara;
 
 class Grid
 {
@@ -44,9 +22,10 @@ public:
     Geom();
     ~Geom();
 public:
-    void Init( int nZones );
+    void Init();
     void GenerateGrid( CfdPara * cfd_para );
 public:
+    int zoneId;
     int nZones;
     int ni_ghost;
     int ni_global;
@@ -61,7 +40,6 @@ public:
 
 class InterfaceSolver;
 void GenerateGrid( int ni, float xmin, float xmax, float * xcoor );
-void CfdSolve( int ni_global, float * xcoor_global, float simu_time, int zoneId, int ni, int nt, float cfl, float * xcoor, BoundarySolver * bcSolver );
 
 const int BCInterface = -1;
 const int BCInflow = 1;

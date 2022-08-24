@@ -2,37 +2,11 @@
 #include <string>
 #include <set>
 #include <map>
-#include "matplotlibcppModified.h"
+#include <iostream>
+#include <algorithm>
 #include <mpi.h>
 #include "Cmpi.h"
-
-namespace plt = matplotlibcpp;
-
-CfdPara::CfdPara()
-{
-    //this->Init();
-}
-
-CfdPara::~CfdPara()
-{
-    ;
-}
-
-void CfdPara::Init()
-{
-    int ni_global = 41;
-    this->xmin = 0.0;
-    this->xmax = 2.0;
-
-    this->cfl = 0.5;
-    this->simu_time = 0.625;
-    this->xlen = xmax - xmin;
-    this->dx = xlen / ( ni_global - 1 );
-    this->cspeed = 1.0;
-    this->dt = dx * cfl / cspeed;
-    this->fnt = ( simu_time + SMALL ) / dt;
-    this->nt = fnt;
-}
+#include "CfdPara.h"
 
 Grid::Grid()
 {
@@ -56,9 +30,9 @@ Geom::~Geom()
     delete [] this->xcoor;
 }
 
-void Geom::Init( int nZones )
+void Geom::Init()
 {
-    this->nZones = nZones;
+    this->nZones = Cmpi::nproc;
     this->ni_ghost = 2;
     this->ni_global = 41;
     this->ni_global_total = this->ni_global + this->ni_ghost;
@@ -67,7 +41,7 @@ void Geom::Init( int nZones )
     this->xcoor_global = 0;
     this->xcoor = new float[ this->ni_total ];
 
-    int zoneId = Cmpi::pid;
+    this->zoneId = Cmpi::pid;
     this->bcSolver = new BoundarySolver{};
     this->bcSolver->zoneId = zoneId;
     this->bcSolver->Init( zoneId, nZones, this->ni );
@@ -682,197 +656,4 @@ void GenerateGrid( int ni, float xmin, float xmax, float * xcoor )
     }
     xcoor[ ist ] = 2 * xcoor[ ist + 1 ] - xcoor[ ist + 2 ];
     xcoor[ ied ] = 2 * xcoor[ ied - 1 ] - xcoor[ ied - 2 ];
-}
-
-float SquareFun( float xm )
-{
-    if ( xm >= 0.5 && xm <= 1.0 )
-    {
-        return 2.0;
-    }
-    return 1.0;
-}
-
-void Theory( float time, float c, std::vector<float>& theory, std::vector<float>& xcoor )
-{
-    int ni = xcoor.size();
-    float xs = c * time;
-    for ( int i = 0; i < ni; ++ i )
-    {
-        float xm = xcoor[i];
-        float xm_new = xm - xs;
-        float fm = SquareFun( xm_new );
-        theory[i] = fm;
-    }
-}
-
-void InitField( float * q, float * xcoor, int ni )
-{
-    int ni_ghost = 2;
-    int ni_total = ni + ni_ghost;
-
-    for ( int i = 0; i < ni_total; ++ i )
-    {
-        float fm = SquareFun( xcoor[i] );
-        q[i] = fm;
-    }
-}
-
-void Visual( float * q, float * xcoor, int ni, const std::string & fileName )
-{
-    std::vector<float> qv{ q + 1, q + ni };
-    std::vector<float> xv{ xcoor + 1, xcoor + ni };
-    // Set the size of output image to 1200x780 pixels
-    plt::figure_size(1200, 780);
-    // Plot line from given x and y data. Color is selected automatically.
-    plt::plot(xv, qv, {{"label", "calc"}});
-    // Add graph title
-    plt::title("1d convection");
-    plt::xlabel("x");
-    plt::ylabel("u");
-    // Enable legend.
-    plt::legend();
-    
-    // Save the image (file format is determined by the extension)
-    plt::savefig( fileName.c_str() );
-}
-
-void Visual( std::vector<float> & q, std::vector<float> & theory, std::vector<float> & x,  const std::string & fileName )
-{
-    // Set the size of output image to 1200x780 pixels
-    plt::figure_size(1200, 780);
-    // Plot line from given x and y data. Color is selected automatically.
-    plt::plot(x, q, {{"label", "calc"}});
-    plt::plot(x, theory, {{"label", "theory"}});
-    // Add graph title
-    plt::title("1d convection");
-    plt::xlabel("x");
-    plt::ylabel("u");
-    // Enable legend.
-    plt::legend();
-
-    // Save the image (file format is determined by the extension)
-    plt::savefig( fileName.c_str() );
-}
-
-
-void BoundaryInterface( float * q, float* xcoor, BoundarySolver * bcSolver )
-{
-    int nIFace = bcSolver->GetNIFace();
-    //std::printf( " BoundaryInterface nIFace = %d\n", nIFace );
-    InterfaceSolver * interfaceSolver = bcSolver->interfaceSolver;
-    interfaceSolver->SwapData( q );
-    for ( int iface = 0; iface < nIFace; ++ iface )
-    {
-        int ghostcell_id = interfaceSolver->interface_ghost_cells[ iface ];
-        //interfaceSolver->ShowInfo( iface );
-        float bcvalue = interfaceSolver->GetBcValue( iface );
-        q[ ghostcell_id ] = bcvalue;
-    }
-}
-
-void Boundary( float * q, float* xcoor, BoundarySolver * bcSolver )
-{
-    //physical boundary
-    int nBFace = bcSolver->GetNBFace();
-    //std::printf(" Boundary zoneID = %d nBFace = %d\n", bcSolver->zoneId, nBFace);
-    for ( int i = 0; i < nBFace; ++ i )
-    {
-        int bctype = bcSolver->bctypes[ i ];
-        int ghostcell_id = bcSolver->bc_ghostcells[ i ];
-        int bc_faceid = bcSolver->bc_faceids[ i ];
-        if ( bctype == BCInterface ) continue;
-        if ( bctype == BCInflow )
-        {
-            float xm = xcoor[ ghostcell_id ];
-            q[ ghostcell_id ] = SquareFun( xm );
-        }
-        else if ( bctype == BCOutflow )
-        {
-            q[ ghostcell_id ] = q[ bc_faceid ];
-        }
-    }
-
-    BoundaryInterface( q, xcoor, bcSolver );
-}
-
-void SolveField( float * q, float * qn, int zoneId, int ni, int nt, float cfl, float * xcoor, BoundarySolver * bcSolver )
-{
-    int ni_ghost = 2;
-    int ni_total = ni + ni_ghost;
-
-    for ( int n = 0; n < nt; ++ n )
-    {
-        if ( zoneId == 0 )
-        {
-            std::printf(" iStep = %d, nStep = %d \n", n + 1, nt);
-        }
-
-        Boundary( q, xcoor, bcSolver );
-        for ( int i = 0; i < ni_total; ++ i )
-        {
-            qn[i] = q[i];
-        }
-
-        for ( int i = 1; i < ni + 1; ++ i )
-        {
-            q[i] = qn[i] - cfl * ( qn[i] - qn[i-1] );
-        }
-    }
-}
-
-void CfdSolve( int ni_global, float * xcoor_global, float simu_time, int zoneId, int ni, int nt, float cfl, float * xcoor, BoundarySolver * bcSolver )
-{
-    int ni_ghost = 2;
-    int ni_total = ni + ni_ghost;
-
-    float * q = new float[ ni_total ];
-    float * qn = new float[ ni_total ];
-    InitField( q, xcoor, ni );
-    SolveField( q, qn, zoneId, ni, nt, cfl, xcoor, bcSolver );
-    char buffer[ 50 ];
-    std::sprintf(buffer, "./cfd%d.png", zoneId );
-    Visual( q, xcoor, ni, buffer );
-
-    std::vector<float> q_global;
-    std::vector<float> x_global;
-    int root = 0;
-    int tag = 0;
-    if ( zoneId != 0 )
-    {
-        MPI_Send(q, ni_total, MPI_FLOAT, root, tag, MPI_COMM_WORLD );
-    }
-    else
-    {
-        std::vector<std::vector<float>> qvec(Cmpi::nproc);
-        for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
-        {
-            qvec[ip].resize(ni_total);
-        }
-        qvec[ 0 ].insert( qvec[ 0 ].end(), q, q + ni_total );
-
-        for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
-        {
-            MPI_Recv(qvec[ip].data(), ni_total, MPI_FLOAT, ip, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
-
-        for ( int ip = 0; ip < Cmpi::nproc; ++ ip )
-        {
-            if ( ip == 0 )
-            {
-                q_global.insert( q_global.end(), qvec[ ip ].begin() + 1, qvec[ ip ].end() - 1 );
-            }
-            else
-            {
-                q_global.insert( q_global.end(), qvec[ ip ].begin() + 2, qvec[ ip ].end() - 1 );
-            }
-        }
-        x_global.insert( x_global.end(), xcoor_global + 1, xcoor_global + ni_global + 1 );
-        std::vector<float> theory;
-        theory.resize( x_global.size() );
-        Theory( simu_time, 1.0, theory, x_global );
-        Visual( q_global, theory, x_global, "./cfd.png");
-    }
-    delete [] q;
-    delete [] qn;
 }

@@ -2,7 +2,6 @@
 
 class Geom;
 class CfdPara;
-class BoundarySolver;
 
 class Solver
 {
@@ -11,7 +10,8 @@ public:
     ~Solver();
 public:
     void Init();
-    void Run( CfdPara * cfd_para, Geom * geom, BoundarySolver * bcSolver, int zoneId );
+    void Run( CfdPara * cfd_para, Geom * geom );
+    void CfdSolve( CfdPara * cfd_para, Geom * geom );
 public:
 
 };

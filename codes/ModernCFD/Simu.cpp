@@ -2,6 +2,7 @@
 #include "Grid.h"
 #include "Solver.h"
 #include "Cmpi.h"
+#include "CfdPara.h"
 
 Simu::Simu()
 {
@@ -24,13 +25,12 @@ void Simu::Run()
     cfd_para->Init();
 
     int nZones = Cmpi::nproc;
-    Geom * geom = new Geom();
-    geom->Init( nZones );
-    int zoneId = Cmpi::pid;
-
+    Geom * geom = new Geom{};
+    geom->Init();
     geom->GenerateGrid( cfd_para );
+
     Solver * solver = new Solver{};
-    solver->Run( cfd_para, geom, geom->bcSolver, zoneId );
+    solver->Run( cfd_para, geom );
     delete cfd_para;
     delete geom;
     delete solver;
