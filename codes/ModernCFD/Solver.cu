@@ -180,9 +180,12 @@ void CfdCopyVector( float * a, float * b, int ni )
     cudaMemcpy(dev_a, a, nSize, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_b, b, nSize, cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 256;
-    int blocksPerGrid = ( ni + threadsPerBlock - 1 ) / threadsPerBlock;
-    GpuCfdCopyVector<<<blocksPerGrid, threadsPerBlock>>>( dev_a, dev_b, ni );
+    int block_size = 256;
+    int grid_size = ( ni + block_size - 1 ) / block_size;
+    dim3 grid_dim( grid_size );
+    dim3 block_dim( block_size );  // 256 threads per block
+
+    GpuCfdCopyVector<<<grid_dim, block_dim>>>( dev_a, dev_b, ni );
     cudaDeviceSynchronize();
     cudaMemcpy(a, dev_a, nSize, cudaMemcpyDeviceToHost);
     cudaFree(dev_a);
@@ -216,10 +219,13 @@ void CfdScalarUpdate( float * q, float * qn, float c, float * timestep, float * 
     cudaMemcpy(dev_ds, ds, nSize, cudaMemcpyHostToDevice);
     cudaMemcpy(dev_timestep, timestep, nSize, cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 256;
-    int blocksPerGrid = ( nElem + threadsPerBlock - 1 ) / threadsPerBlock;
-    //std::printf("Solver::SolveField CUDA kernel launch with %d blocks of %d threads\n", blocksPerGrid, threadsPerBlock);
-    GpuCfdScalarUpdate<<<blocksPerGrid, threadsPerBlock>>>(dev_q, dev_qn, c, dev_timestep, dev_ds, ni);
+    int block_size = 256;
+    int grid_size = ( nElem + block_size - 1 ) / block_size;
+    dim3 grid_dim( grid_size );
+    dim3 block_dim( block_size );  // 256 threads per block
+
+    //std::printf("Solver::SolveField CUDA kernel launch with %d blocks of %d threads\n", grid_size, block_size);
+    GpuCfdScalarUpdate<<<grid_dim, block_dim>>>(dev_q, dev_qn, c, dev_timestep, dev_ds, ni);
     cudaDeviceSynchronize();
     cudaMemcpy(q, dev_q, nSize, cudaMemcpyDeviceToHost);
     cudaFree(dev_q);

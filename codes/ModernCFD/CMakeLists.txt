@@ -96,9 +96,6 @@ set( HEADER_LIST
     CfdPara.h
     Simu.h
     Solver.h
-    GpuSimu.h
-    computeGpu.h
-    addConstantGpu.h
 )
 
 set( SRC_LIST 
@@ -109,9 +106,6 @@ set( SRC_LIST
     CfdPara.cpp
     Simu.cpp
     Solver.cu
-    GpuSimu.cpp
-    computeGpu.cu
-    addConstantGpu.cu
 )
 
 add_executable ( ${PROJECT_NAME}
