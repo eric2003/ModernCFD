@@ -11,6 +11,7 @@ public:
     void Init();
     void GenerateGrid();
     void GenerateGrid( int ni, float xmin, float xmax, float * xcoor );
+    void ComputeGeom();
 public:
     int zoneId;
     int nZones;
@@ -24,6 +25,7 @@ public:
 public:
     float xlen;
     float dx;
+    float * ds;
     float xmin, xmax;
 public:
     BoundarySolver * bcSolver;

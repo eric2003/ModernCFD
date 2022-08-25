@@ -8,6 +8,11 @@ cmake --build . --config Debug
 cmake .. -D CMAKE_BUILD_TYPE=Release
 cmake --build . --config Release
 
+cmake .. -D CMAKE_BUILD_TYPE=Release -D TEST
+cmake .. -D CMAKE_BUILD_TYPE=Release -D TEST:BOOL=ON
+
+cmake .. -D CMAKE_BUILD_TYPE=Release -D CFD_WITH_CUDA:BOOL=OFF
+
 PS D:\work\cfd_work\ModernCFD\codes\LinearConvection\22\build> mpiexec -n 4 .\Release\testprj.exe
  InterfaceSolver::Init()
  SetNeighborData nSize =1

@@ -17,9 +17,11 @@ public:
     void Visualize( CfdPara * cfd_para, Geom * geom );
     void Boundary( float * q, Geom * geom );
     void BoundaryInterface( float * q, Geom * geom );
+    void Timestep( CfdPara * cfd_para, Geom * geom );
 public:
     float * q;
     float * qn;
+    float * timestep;
 
 };
 

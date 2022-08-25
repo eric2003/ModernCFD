@@ -7,12 +7,14 @@ Geom::Geom()
 {
     this->xcoor_global = 0;
     this->xcoor = 0;
+    this->ds = 0;
 }
 
 Geom::~Geom()
 {
     delete [] this->xcoor_global;
     delete [] this->xcoor;
+    delete [] this->ds;
 }
 
 void Geom::Init()
@@ -25,6 +27,7 @@ void Geom::Init()
     this->ni_total = this->ni + this->ni_ghost;
     this->xcoor_global = 0;
     this->xcoor = new float[ this->ni_total ];
+    this->ds = new float[ this->ni_total ];
 
     this->zoneId = Cmpi::pid;
     this->bcSolver = new BoundarySolver{};
@@ -88,4 +91,15 @@ void Geom::GenerateGrid()
         std::printf("%f ", this->xcoor[ i ] );
     }
     std::printf("\n");
+}
+
+void Geom::ComputeGeom()
+{
+    for ( int i = 1; i < this->ni_total - 1; ++ i )
+    {
+        this->ds[ i ] = this->xcoor[ i ] - this->xcoor[ i - 1 ];
+    }
+
+    this->ds[ 0 ] = this->ds[ 1 ];
+    this->ds[ this->ni + 1 ] = this->ds[ this->ni ];
 }

@@ -11,6 +11,7 @@ message(STATUS "Build directory: ${PROJECT_BINARY_DIR}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set ( PRJ_COMPILE_FEATURES )
+set ( PRJ_COMPILE_DEFINITIONS )
 set ( PRJ_LIBRARIES )
 set ( PRJ_INCLUDE_DIRS )
 
@@ -68,6 +69,26 @@ if ( MSVC )
     set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME} )
 endif()
 
+option ( CFD_WITH_CUDA "Build Modern CFD(OneFLOW) with CUDA support" ON )
+option ( CFD_WITH_OPENMP "Build Modern CFD(OneFLOW) with OPENMP support" ON )
+option ( CFD_WITH_MPI "Build Modern CFD(OneFLOW) with MPI support" ON )
+
+message ( STATUS  "CFD_WITH_CUDA=${CFD_WITH_CUDA}" )
+message ( STATUS  "CFD_WITH_OPENMP=${CFD_WITH_OPENMP}" )
+message ( STATUS  "CFD_WITH_MPI=${CFD_WITH_MPI}" )
+
+if ( CFD_WITH_CUDA )
+    list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_CUDA )
+endif ()
+
+if ( CFD_WITH_OPENMP )
+    list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_OPENMP )
+endif ()
+
+if ( CFD_WITH_MPI )
+    list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_MPI )
+endif ()
+
 set( HEADER_LIST 
     Grid.h
     Geom.h
@@ -121,4 +142,9 @@ target_link_libraries( ${PROJECT_NAME}
 target_compile_features ( ${PROJECT_NAME} 
     PRIVATE 
         ${PRJ_COMPILE_FEATURES}
+)
+
+target_compile_definitions ( ${PROJECT_NAME}
+    PRIVATE
+       ${PRJ_COMPILE_DEFINITIONS} 
 )

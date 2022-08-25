@@ -23,6 +23,7 @@ void Simu::Run()
     Geom * geom = new Geom{};
     geom->Init();
     geom->GenerateGrid();
+    geom->ComputeGeom();
 
     //cfd parameter
     CfdPara * cfd_para = new CfdPara{};

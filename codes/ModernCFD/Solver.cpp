@@ -7,6 +7,7 @@
 #include "Grid.h"
 #include "Geom.h"
 #include "CfdPara.h"
+#include <omp.h>
 #include "matplotlibcppModified.h"
 namespace plt = matplotlibcpp;
 
@@ -71,6 +72,17 @@ void Visual( std::vector<float> & q, std::vector<float> & theory, std::vector<fl
 
 Solver::Solver()
 {
+    std::printf("Solver::Solver() number of host CPUs:\t%d\n", omp_get_num_procs());
+    int nCpuThreads = 8;
+    omp_set_num_threads( nCpuThreads );
+#ifdef ENABLE_OPENMP
+#pragma omp parallel
+#endif
+    {
+        unsigned int cpu_thread_id = omp_get_thread_num();
+        unsigned int num_cpu_threads = omp_get_num_threads();
+        std::printf( "Solver::Solver() CPU thread %d (of %d)\n", cpu_thread_id, num_cpu_threads );
+    }
 }
 
 Solver::~Solver()
@@ -100,11 +112,21 @@ void Solver::CfdSolve( CfdPara * cfd_para, Geom * geom )
 {
     this->q = new float[ geom->ni_total ];
     this->qn = new float[ geom->ni_total ];
+    this->timestep = new float[ geom->ni_total ];
     this->InitField( geom );
     this->SolveField( cfd_para, geom );
     this->Visualize( cfd_para, geom );
     delete [] this->q;
     delete [] this->qn;
+    delete [] this->timestep;
+}
+
+void Solver::Timestep( CfdPara * cfd_para, Geom * geom )
+{
+    for ( int i = 0; i < geom->ni_total; ++ i )
+    {
+        this->timestep[ i ] = geom->ds[ i ] * cfd_para->cfl / cfd_para->cspeed;
+    }
 }
 
 void Solver::SolveField( CfdPara * cfd_para, Geom * geom )
@@ -117,6 +139,7 @@ void Solver::SolveField( CfdPara * cfd_para, Geom * geom )
         }
 
         this->Boundary( q, geom );
+        this->Timestep( cfd_para, geom );
         for ( int i = 0; i < geom->ni_total; ++ i )
         {
             qn[ i ] = q[ i ];
@@ -124,7 +147,8 @@ void Solver::SolveField( CfdPara * cfd_para, Geom * geom )
 
         for ( int i = 1; i < geom->ni + 1; ++ i )
         {
-            q[ i ] = qn[ i ] - cfd_para->cfl * ( qn[ i ] - qn[ i - 1 ] );
+            float cfl = cfd_para->cspeed * this->timestep[ i ] / geom->ds[ i ];
+            q[ i ] = qn[ i ] - cfl * ( qn[ i ] - qn[ i - 1 ] );
         }
     }
 }
