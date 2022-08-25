@@ -108,7 +108,7 @@ set( SRC_LIST
     Cmpi.cpp
     CfdPara.cpp
     Simu.cpp
-    Solver.cpp
+    Solver.cu
     GpuSimu.cpp
     computeGpu.cu
     addConstantGpu.cu
