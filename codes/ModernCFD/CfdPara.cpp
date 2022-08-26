@@ -13,8 +13,6 @@ CfdPara::~CfdPara()
 
 void CfdPara::Init( Geom * geom )
 {
-    int ni_global = 41;
-
     this->cfl = 0.5;
     this->simu_time = 0.625;
     this->cspeed = 1.0;

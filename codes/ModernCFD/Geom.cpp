@@ -54,15 +54,16 @@ void Geom::Init()
 {
     this->nZones = Cmpi::nproc;
     this->ni_ghost = 2;
-    this->ni_global = 41;
+    this->ni_global = Geom_t::ni_global;
     this->ni_global_total = this->ni_global + this->ni_ghost;
-    this->ni = ( this->ni_global - 1 ) / this->nZones + 1;
+    this->zoneId = Cmpi::pid;
+    //this->ni = ( this->ni_global - 1 ) / this->nZones + 1;
+    this->ni = Geom_t::zonenis[ this->zoneId ];
     this->ni_total = this->ni + this->ni_ghost;
     this->xcoor_global = 0;
     this->xcoor = new float[ this->ni_total ];
     this->ds = new float[ this->ni_total ];
 
-    this->zoneId = Cmpi::pid;
     this->bcSolver = new BoundarySolver{};
     this->bcSolver->zoneId = zoneId;
     this->bcSolver->Init( zoneId, nZones, this->ni );
@@ -71,7 +72,7 @@ void Geom::Init()
     this->xmax = 2.0;
 
     this->xlen = xmax - xmin;
-    this->dx = xlen / ( ni_global - 1 );
+    this->dx = xlen / ( this->ni_global - 1 );
 }
 
 void Geom::GenerateGrid( int ni, float xmin, float xmax, float * xcoor )
@@ -101,11 +102,15 @@ void Geom::GenerateGrid()
         {
             this->xcoor[ i ] = this->xcoor_global[ i ];
         }
+        int istart = 0;
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
-            int istart = ip * ( this->ni - 1 );
+            //int istart = ip * ( this->ni - 1 );
+            int ni_tmp = Geom_t::zonenis[ ip ];
+            int ni_total_tmp = ni_tmp + this->ni_ghost;
+            istart += ( ni_tmp - 1 );
             float * source_start = this->xcoor_global + istart;
-            MPI_Send( source_start, this->ni_total, MPI_FLOAT, ip, 0, MPI_COMM_WORLD );
+            MPI_Send( source_start, ni_total_tmp, MPI_FLOAT, ip, 0, MPI_COMM_WORLD );
         }
     }
     else
