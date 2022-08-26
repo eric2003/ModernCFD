@@ -342,7 +342,7 @@ void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
             int ni_tmp = Geom_t::zonenis[ ip ];
-            int ni_total_tmp = ni_tmp + geom->ni_ghost;
+            int ni_total_tmp = ni_tmp + Geom_t::ni_ghost;
 
             qvec[ ip ].resize( ni_total_tmp );
         }
@@ -351,7 +351,7 @@ void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
             int ni_tmp = Geom_t::zonenis[ ip ];
-            int ni_total_tmp = ni_tmp + geom->ni_ghost;
+            int ni_total_tmp = ni_tmp + Geom_t::ni_ghost;
             MPI_Recv( qvec[ ip ].data(), ni_total_tmp, MPI_FLOAT, ip, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         }
 
@@ -366,7 +366,7 @@ void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
                 q_global.insert( q_global.end(), qvec[ ip ].begin() + 2, qvec[ ip ].end() - 1 );
             }
         }
-        x_global.insert( x_global.end(), geom->xcoor_global + 1, geom->xcoor_global + geom->ni_global + 1 );
+        x_global.insert( x_global.end(), geom->xcoor_global + 1, geom->xcoor_global + Geom_t::ni_global + 1 );
         std::vector<float> theory;
         theory.resize( x_global.size() );
         Theory( cfd_para->simu_time, cfd_para->cspeed, theory, x_global );

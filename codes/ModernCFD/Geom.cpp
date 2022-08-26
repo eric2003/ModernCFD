@@ -5,6 +5,7 @@
 
 int Geom_t::ni_ghost = 2;
 int Geom_t::ni_global = 1;
+int Geom_t::ni_global_total = -1;
 std::vector<int> Geom_t::zonenis;
 
 Geom_t::Geom_t()
@@ -19,6 +20,9 @@ void Geom_t::Init()
 {
     //Geom_t::ni_global = 41;
     Geom_t::ni_global = 42;
+    Geom_t::ni_ghost = 2;
+    Geom_t::ni_global_total = Geom_t::ni_global + Geom_t::ni_ghost;
+
     int nZones = Cmpi::nproc;
     Geom_t::zonenis.resize( nZones );
     int grid_ni = ( Geom_t::ni_global + nZones - 1 ) / nZones;
@@ -54,12 +58,9 @@ Geom::~Geom()
 void Geom::Init()
 {
     this->nZones = Cmpi::nproc;
-    this->ni_ghost = 2;
-    this->ni_global = Geom_t::ni_global;
-    this->ni_global_total = this->ni_global + this->ni_ghost;
     this->zoneId = Cmpi::pid;
     this->ni = Geom_t::zonenis[ this->zoneId ];
-    this->ni_total = this->ni + this->ni_ghost;
+    this->ni_total = this->ni + Geom_t::ni_ghost;
     this->xcoor_global = 0;
     this->xcoor = new float[ this->ni_total ];
     this->ds = new float[ this->ni_total ];
@@ -72,7 +73,7 @@ void Geom::Init()
     this->xmax = 2.0;
 
     this->xlen = xmax - xmin;
-    this->dx = xlen / ( this->ni_global - 1 );
+    this->dx = xlen / ( Geom_t::ni_global - 1 );
 }
 
 void Geom::GenerateGrid( int ni, float xmin, float xmax, float * xcoor )
@@ -95,8 +96,8 @@ void Geom::GenerateGrid()
     if ( Cmpi::pid == 0 )
     {
         std::cout << "Running on " << Cmpi::nproc << " nodes" << std::endl;
-        this->xcoor_global = new float[ this->ni_global_total ];
-        this->GenerateGrid( this->ni_global, this->xmin, this->xmax, this->xcoor_global );
+        this->xcoor_global = new float[ Geom_t::ni_global_total ];
+        this->GenerateGrid( Geom_t::ni_global, this->xmin, this->xmax, this->xcoor_global );
 
         for ( int i = 0; i < this->ni_total; ++ i )
         {
@@ -105,9 +106,8 @@ void Geom::GenerateGrid()
         int istart = 0;
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
-            //int istart = ip * ( this->ni - 1 );
             int ni_tmp = Geom_t::zonenis[ ip ];
-            int ni_total_tmp = ni_tmp + this->ni_ghost;
+            int ni_total_tmp = ni_tmp + Geom_t::ni_ghost;
             istart += ( ni_tmp - 1 );
             float * source_start = this->xcoor_global + istart;
             MPI_Send( source_start, ni_total_tmp, MPI_FLOAT, ip, 0, MPI_COMM_WORLD );
