@@ -1,16 +1,12 @@
-#include "Cmpi.h"
 #include "Simu.h"
 
 int main(int argc, char **argv)
 {
-    Cmpi::Init( argc, argv );
-
-    Simu * simu = new Simu{};
+    Simu * simu = new Simu{ argc, argv };
 
     simu->Run();
    
     delete simu;
-    Cmpi::Finalize();
     
     return 0;
 }

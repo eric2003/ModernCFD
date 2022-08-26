@@ -4,10 +4,10 @@
 class Simu
 {
 public:
-    Simu();
+    Simu( int argc, char ** argv );
     ~Simu();
 public:
-    void Init(int argc, char **argv);
+    void Init( int argc, char ** argv );
     void Run();
 };
 

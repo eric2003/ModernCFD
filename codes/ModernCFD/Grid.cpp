@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <mpi.h>
 #include "Cmpi.h"
-#include "CfdPara.h"
+#include "Geom.h"
 
 Grid::Grid()
 {
@@ -282,14 +282,16 @@ void BoundarySolver::Init( int zoneId, int nZones, int ni )
     this->ni = ni;
     //local pt set : 30 40
     //global pt map : 0->1 10->2 20->2 30->2 40->1
-    
+    int ishift = 0;
     for ( int iZone = 0; iZone < nZones; ++ iZone )
     {
-        int ishift = iZone * ( ni - 1 );
+        int ni_local = Geom_t::zonenis[ iZone ];
+        //ishift = iZone * ( ni - 1 );
         int local_face_id0 = 1 + 0;
-        int local_face_id1 = 1 + ni - 1;
+        int local_face_id1 = 1 + ni_local - 1;
         int global_face_id0 = ishift + 1 + 0;
-        int global_face_id1 = ishift + 1 + ni - 1;
+        int global_face_id1 = ishift + 1 + ni_local - 1;
+        ishift += ( ni_local - 1 );
         int cell_id0 = local_face_id0 + 1;
         int cell_id1 = local_face_id1 - 1;
         int ghost_cell_id0 = local_face_id0 - 1;
@@ -306,14 +308,54 @@ void BoundarySolver::Init( int zoneId, int nZones, int ni )
     this->MarkInterface();
 
     int left_bcface_id = 1;
-    int right_bcface_id = 1 + nZones * ( ni - 1 );
+    //int right_bcface_id = 1 + nZones * ( ni - 1 );
+    int right_bcface_id = 1 + ishift;
+    std::printf( " right_bcface_id =%d \n", right_bcface_id );
     this->SetBcType( left_bcface_id, BCInflow );
     this->SetBcType( right_bcface_id, BCOutflow );
 
     this->FillBCPoints();
-
-    //this->PrintBcInfo();
 }
+
+//void BoundarySolver::Init( int zoneId, int nZones, int ni )
+//{
+//    this->zoneId = zoneId;
+//    this->nZones = nZones;
+//    this->ni = ni;
+//    //local pt set : 30 40
+//    //global pt map : 0->1 10->2 20->2 30->2 40->1
+//    
+//    for ( int iZone = 0; iZone < nZones; ++ iZone )
+//    {
+//        int ishift = iZone * ( ni - 1 );
+//        int local_face_id0 = 1 + 0;
+//        int local_face_id1 = 1 + ni - 1;
+//        int global_face_id0 = ishift + 1 + 0;
+//        int global_face_id1 = ishift + 1 + ni - 1;
+//        int cell_id0 = local_face_id0 + 1;
+//        int cell_id1 = local_face_id1 - 1;
+//        int ghost_cell_id0 = local_face_id0 - 1;
+//        int ghost_cell_id1 = local_face_id1 + 1;
+//        Insert( global_face_map, global_face_id0, local_face_id0, iZone, cell_id0, ghost_cell_id0 );
+//        Insert( global_face_map, global_face_id1, local_face_id1, iZone, cell_id1, ghost_cell_id1 );
+//
+//        if ( iZone == zoneId )
+//        {
+//            Insert( local_face_map, local_face_id0, global_face_id0 );
+//            Insert( local_face_map, local_face_id1, global_face_id1 );
+//        }
+//    }
+//    this->MarkInterface();
+//
+//    int left_bcface_id = 1;
+//    int right_bcface_id = 1 + nZones * ( ni - 1 );
+//    this->SetBcType( left_bcface_id, BCInflow );
+//    this->SetBcType( right_bcface_id, BCOutflow );
+//
+//    this->FillBCPoints();
+//
+//    //this->PrintBcInfo();
+//}
 
 
 IData::IData()

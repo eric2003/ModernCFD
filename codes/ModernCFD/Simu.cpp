@@ -4,14 +4,14 @@
 #include "Cmpi.h"
 #include "CfdPara.h"
 
-Simu::Simu()
+Simu::Simu(int argc, char **argv)
 {
-    ;
+    Cmpi::Init( argc, argv );
 }
 
 Simu::~Simu()
 {
-    ;
+    Cmpi::Finalize();
 }
 
 void Simu::Init(int argc, char **argv)
@@ -20,6 +20,7 @@ void Simu::Init(int argc, char **argv)
 
 void Simu::Run()
 {
+    Geom_t::Init();
     Geom * geom = new Geom{};
     geom->Init();
     geom->GenerateGrid();

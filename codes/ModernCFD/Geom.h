@@ -1,7 +1,22 @@
 #pragma once
-class CfdPara;
+#include <vector>
 
 class BoundarySolver;
+
+class Geom_t
+{
+public:
+    Geom_t();
+    ~Geom_t();
+public:
+    static void Init();
+public:
+    static int ni_ghost;
+    static int ni_global;
+public:
+    static std::vector<int> zonenis;
+};
+
 class Geom
 {
 public:

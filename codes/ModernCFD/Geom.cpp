@@ -3,6 +3,39 @@
 #include "Grid.h"
 #include <iostream>
 
+int Geom_t::ni_ghost = 2;
+int Geom_t::ni_global = 1;
+std::vector<int> Geom_t::zonenis;
+
+Geom_t::Geom_t()
+{
+}
+
+Geom_t::~Geom_t()
+{
+}
+
+void Geom_t::Init()
+{
+    Geom_t::ni_global = 41;
+    int nZones = Cmpi::nproc;
+    Geom_t::zonenis.resize( nZones );
+    int grid_ni = ( Geom_t::ni_global + nZones - 1 ) / nZones;
+    int ni_last = Geom_t::ni_global - ( nZones - 1 ) * ( grid_ni - 1 );
+
+    for ( int i = 0; i < nZones - 1; ++ i )
+    {
+        Geom_t::zonenis[i] = grid_ni;
+    }
+    Geom_t::zonenis[nZones - 1] = ni_last;
+    std::printf( "zone ni----------------------\n" );
+    for ( int i = 0; i < nZones; ++ i )
+    {
+        std::printf( "%d ", Geom_t::zonenis[i] );
+    }
+    std::printf( "\n" );
+}
+
 Geom::Geom()
 {
     this->xcoor_global = 0;
@@ -58,11 +91,6 @@ void Geom::GenerateGrid( int ni, float xmin, float xmax, float * xcoor )
 
 void Geom::GenerateGrid()
 {
-    if ( Cmpi::pid == 0 )
-    {
-        //std::printf( " dt = %f, dx = %f, nt = %d, ni_global = %d\n", cfd_para->dt, cfd_para->dx, cfd_para->nt, this->ni_global );
-    }
-
     if ( Cmpi::pid == 0 )
     {
         std::cout << "Running on " << Cmpi::nproc << " nodes" << std::endl;
