@@ -259,7 +259,8 @@ void Solver::SolveField( CfdPara * cfd_para, Geom * geom )
         this->Boundary( q, geom );
         this->Timestep( cfd_para, geom );
 
-        int nCpuThreads = 4;
+        //int nCpuThreads = 4;
+        int nCpuThreads = 1;
         omp_set_num_threads( nCpuThreads );
         #pragma omp parallel
         {
@@ -268,7 +269,8 @@ void Solver::SolveField( CfdPara * cfd_para, Geom * geom )
             int gpu_id = -1;
             cudaSetDevice( cpu_thread_id % Cmpi::num_gpus );
             cudaGetDevice( &gpu_id );
-            std::printf("Solver::SolveField CPU thread %d (of %d) uses CUDA device %d\n", cpu_thread_id,num_cpu_threads, gpu_id);
+            std::printf("Solver::SolveField CPU process %d (of %d) CPU thread %d (of %d) uses CUDA device %d\n", \
+                Cmpi::pid, Cmpi::nproc, cpu_thread_id, num_cpu_threads, gpu_id);
 
             CfdCopyVector( qn, q, geom->ni_total );
             //CfdCopyVectorSerial( qn, q, geom->ni_total );
@@ -339,13 +341,18 @@ void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
         std::vector<std::vector<float>> qvec( Cmpi::nproc );
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
-            qvec[ ip ].resize( geom->ni_total );
+            int ni_tmp = Geom_t::zonenis[ ip ];
+            int ni_total_tmp = ni_tmp + geom->ni_ghost;
+
+            qvec[ ip ].resize( ni_total_tmp );
         }
         qvec[ 0 ].insert( qvec[ 0 ].end(), this->q, this->q + geom->ni_total );
 
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
-            MPI_Recv( qvec[ ip ].data(), geom->ni_total, MPI_FLOAT, ip, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            int ni_tmp = Geom_t::zonenis[ ip ];
+            int ni_total_tmp = ni_tmp + geom->ni_ghost;
+            MPI_Recv( qvec[ ip ].data(), ni_total_tmp, MPI_FLOAT, ip, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         }
 
         for ( int ip = 0; ip < Cmpi::nproc; ++ ip )

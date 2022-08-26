@@ -17,7 +17,8 @@ Geom_t::~Geom_t()
 
 void Geom_t::Init()
 {
-    Geom_t::ni_global = 41;
+    //Geom_t::ni_global = 41;
+    Geom_t::ni_global = 42;
     int nZones = Cmpi::nproc;
     Geom_t::zonenis.resize( nZones );
     int grid_ni = ( Geom_t::ni_global + nZones - 1 ) / nZones;
