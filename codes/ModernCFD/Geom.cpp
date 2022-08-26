@@ -58,7 +58,6 @@ void Geom::Init()
     this->ni_global = Geom_t::ni_global;
     this->ni_global_total = this->ni_global + this->ni_ghost;
     this->zoneId = Cmpi::pid;
-    //this->ni = ( this->ni_global - 1 ) / this->nZones + 1;
     this->ni = Geom_t::zonenis[ this->zoneId ];
     this->ni_total = this->ni + this->ni_ghost;
     this->xcoor_global = 0;
