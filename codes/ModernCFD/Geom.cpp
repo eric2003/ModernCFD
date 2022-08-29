@@ -18,8 +18,12 @@ Geom_t::~Geom_t()
 
 void Geom_t::Init()
 {
-    //Geom_t::ni_global = 41;
-    Geom_t::ni_global = 42;
+    Geom_t::ni_global = 41;
+    //Geom_t::ni_global = 401;
+    //Geom_t::ni_global = 4001;
+    //Geom_t::ni_global = 40001;
+    //Geom_t::ni_global = 400001;
+    //Geom_t::ni_global = 4000001;
     Geom_t::ni_ghost = 2;
     Geom_t::ni_global_total = Geom_t::ni_global + Geom_t::ni_ghost;
 
@@ -121,7 +125,7 @@ void Geom::GenerateGrid()
     std::printf("print xcoor: process id = %d Cmpi::nproc = %d\n", Cmpi::pid, Cmpi::nproc );
     for ( int i = 0; i < this->ni_total; ++ i )
     {
-        std::printf("%f ", this->xcoor[ i ] );
+        //std::printf("%f ", this->xcoor[ i ] );
     }
     std::printf("\n");
 }
