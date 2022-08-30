@@ -2,8 +2,6 @@ cmake_minimum_required ( VERSION 3.20 )
 
 project ( ModernCFD )
 
-#set ( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/" )
-
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -40,7 +38,6 @@ list ( APPEND PRJ_LIBRARIES OpenMP::OpenMP_CXX )
 
 set ( CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=${OpenMP_CXX_FLAGS}" )
 
-#find_package ( Python3 COMPONENTS Interpreter Development )
 find_package ( Python3 COMPONENTS Interpreter Development NumPy )
 
 message ( STATUS "Python3_FOUND = ${Python3_FOUND} " )
@@ -52,15 +49,6 @@ if ( ${Python3_FOUND} )
 else()
     message ( FATAL_ERROR "Python3 not found, please install it." )
 endif()
-
-#find_package(NumPy)
-#if ( ${PYTHON_NUMPY_FOUND} )
-#    list ( APPEND PRJ_INCLUDE_DIRS ${PYTHON_NUMPY_INCLUDE_DIR} )
-#else()
-#    message(WARNING "Python3 NumPy not found, proceeding with -DWITHOUT_NUMPY."
-#    " Some functions might not work.")
-#    list ( APPEND PRJ_COMPILE_DEF WITHOUT_NUMPY )
-#endif()
 
 message ( STATUS "PYTHON_NUMPY_FOUND = ${PYTHON_NUMPY_FOUND} " )
 message ( STATUS "Python3_NumPy_FOUND = ${Python3_NumPy_FOUND} " )
