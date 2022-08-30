@@ -33,6 +33,14 @@ message ( STATUS  "PRJ_CUDA_SWITCH=${PRJ_CUDA_SWITCH}" )
 message ( STATUS  "PRJ_OPENMP_SWITCH=${PRJ_OPENMP_SWITCH}" )
 message ( STATUS  "PRJ_MPI_SWITCH=${PRJ_MPI_SWITCH}" )
 
+if ( PRJ_OPENMP_SWITCH )
+    list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_OPENMP )
+endif ()
+
+if ( PRJ_MPI_SWITCH )
+    list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_MPI )
+endif ()
+
 if ( PRJ_CUDA_SWITCH )
     find_package ( CUDAToolkit )
     if ( CUDAToolkit_FOUND )
@@ -75,14 +83,6 @@ if ( MSVC )
     set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME} )
 endif()
 
-if ( CFD_WITH_OPENMP )
-    list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_OPENMP )
-endif ()
-
-if ( CFD_WITH_MPI )
-    list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_MPI )
-endif ()
-
 set( HEADER_LIST 
     Grid.h
     Geom.h
@@ -90,6 +90,9 @@ set( HEADER_LIST
     CfdPara.h
     Simu.h
     Solver.h
+    SolverDetail.h
+    SolverDetailCpu.h
+    SolverDetailCuda.h
 )
 
 set( SRC_LIST 
@@ -99,7 +102,10 @@ set( SRC_LIST
     Cmpi.cpp
     CfdPara.cpp
     Simu.cpp
-    Solver.cu
+    Solver.cpp
+    SolverDetail.cpp
+    SolverDetailCpu.cpp
+    SolverDetailCuda.cu
 )
 
 add_executable ( ${PROJECT_NAME}
