@@ -117,7 +117,42 @@ void Solver::Run( CfdPara * cfd_para, Geom * geom )
     this->CfdSolve( cfd_para, geom );
 }
 
-void Solver::InitField( Geom * geom )
+void Solver::AllocateField( Geom * geom )
+{
+    this->q = new float[ geom->ni_total ];
+    this->qn = new float[ geom->ni_total ];
+    this->timestep = new float[ geom->ni_total ];
+}
+
+void Solver::DeallocateField( Geom * geom )
+{
+    delete [] this->q;
+    delete [] this->qn;
+    delete [] this->timestep;
+}
+
+void Solver::InitField( CfdPara * cfd_para, Geom * geom )
+{
+    if ( cfd_para->irestart == 0 )
+    {
+        this->SetInflowField( cfd_para, geom );
+    }
+    else
+    {
+        this->ReadField( cfd_para, geom );
+    }
+}
+
+void Solver::SetInflowField( CfdPara * cfd_para, Geom * geom )
+{
+    for ( int i = 0; i < geom->ni_total; ++ i )
+    {
+        float fm = SquareFun( geom->xcoor[ i ] );
+        this->q[ i ] = fm;
+    }
+}
+
+void Solver::ReadField( CfdPara * cfd_para, Geom * geom )
 {
     for ( int i = 0; i < geom->ni_total; ++ i )
     {
@@ -128,16 +163,12 @@ void Solver::InitField( Geom * geom )
 
 void Solver::CfdSolve( CfdPara * cfd_para, Geom * geom )
 {
-    this->q = new float[ geom->ni_total ];
-    this->qn = new float[ geom->ni_total ];
-    this->timestep = new float[ geom->ni_total ];
-    this->InitField( geom );
+    this->AllocateField( geom );
+    this->InitField( cfd_para, geom );
     this->SolveField( cfd_para, geom );
     this->SaveField( cfd_para, geom );
     this->Visualize( cfd_para, geom );
-    delete [] this->q;
-    delete [] this->qn;
-    delete [] this->timestep;
+    this->DeallocateField( geom );
 }
 
 void Solver::Timestep( CfdPara * cfd_para, Geom * geom )
