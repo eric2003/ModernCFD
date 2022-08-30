@@ -73,15 +73,17 @@ void Visual( std::vector<float> & q, std::vector<float> & theory, std::vector<fl
 
 Solver::Solver()
 {
-    //std::printf("Solver::Solver() number of host CPUs:\t%d\n", omp_get_num_procs());
+#ifdef PRJ_ENABLE_CUDA
     cudaGetDeviceCount( &Cmpi::num_gpus );
     if ( Cmpi::num_gpus < 1 ) {
         std::printf("no CUDA capable devices were detected\n");
-        std::exit(1);
+        //std::exit(1);
     }
+#endif
     std::printf("number of host CPUs:\t%d\n", omp_get_num_procs());
     std::printf("number of CUDA devices:\t%d\n", Cmpi::num_gpus);
 
+#ifdef PRJ_ENABLE_CUDA
     for ( int i = 0; i < Cmpi::num_gpus; ++ i )
     {
         cudaDeviceProp dprop;
@@ -90,6 +92,7 @@ Solver::Solver()
     }
 
     std::printf("---------------------------\n");
+#endif
 
     int nCpuThreads = 8;
     omp_set_num_threads( nCpuThreads );
@@ -179,6 +182,7 @@ void Solver::Timestep( CfdPara * cfd_para, Geom * geom )
     }
 }
 
+#ifdef PRJ_ENABLE_CUDA
 __global__ void GpuCfdCopyVector( float *a, const float *b, int numElements )
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -199,9 +203,12 @@ __global__ void GpuCfdScalarUpdate( float * q, const float * qn, float c, const 
         q[ i ] = qn[ i ] - cfl * ( qn[ i ] - qn[ i - 1 ] );
     }
 }
+#endif
+
 
 void CfdCopyVector( float * a, float * b, int ni )
 {
+#ifdef PRJ_ENABLE_CUDA
     std::size_t nSize = ni * sizeof(float);
 
     float * dev_a;
@@ -222,6 +229,7 @@ void CfdCopyVector( float * a, float * b, int ni )
     cudaMemcpy(a, dev_a, nSize, cudaMemcpyDeviceToHost);
     cudaFree(dev_a);
     cudaFree(dev_b);
+#endif
 }
 
 void CfdCopyVectorSerial( float * a, float * b, int ni )
@@ -234,6 +242,7 @@ void CfdCopyVectorSerial( float * a, float * b, int ni )
 
 void CfdScalarUpdate( float * q, float * qn, float c, float * timestep, float * ds, int ni )
 {
+#ifdef PRJ_ENABLE_CUDA
     float * dev_q;
     float * dev_qn;
     float * dev_timestep;
@@ -264,6 +273,7 @@ void CfdScalarUpdate( float * q, float * qn, float c, float * timestep, float * 
     cudaFree(dev_qn);
     cudaFree(dev_timestep);
     cudaFree(dev_ds);
+#endif
 }
 
 void CfdScalarUpdateSerial( float * q, float * qn, float c, float * timestep, float * ds, int ni )

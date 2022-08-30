@@ -13,6 +13,8 @@ cmake .. -D CMAKE_BUILD_TYPE=Release -D TEST:BOOL=ON
 
 cmake .. -D CMAKE_BUILD_TYPE=Release -D CFD_WITH_CUDA:BOOL=OFF
 
+cmake .. -D CMAKE_BUILD_TYPE=Release -D PRJ_CUDA_SWITCH:BOOL=OFF
+
 int grid_ni = ( Geom_t::ni_global + nZones - 1 ) / nZones;
 ( grid_ni - 1  ) * nZones + 1 = ( Geom_t::ni_global + nZones - 1 ) + 1
 

@@ -25,13 +25,25 @@ if ( MPI_FOUND )
     list ( APPEND PRJ_LIBRARIES ${MPI_LIBRARIES} )
 endif ()
 
-find_package ( CUDAToolkit )
-if ( CUDAToolkit_FOUND )
-    enable_language( CUDA )
-    set ( CMAKE_CUDA_STANDARD 20 )
-    set ( CMAKE_CUDA_ARCHITECTURES "60;72;75" )
+option ( PRJ_CUDA_SWITCH "Build Modern CFD(OneFLOW) with CUDA support" ON )
+option ( PRJ_OPENMP_SWITCH "Build Modern CFD(OneFLOW) with OPENMP support" ON )
+option ( PRJ_MPI_SWITCH "Build Modern CFD(OneFLOW) with MPI support" ON )
+
+message ( STATUS  "PRJ_CUDA_SWITCH=${PRJ_CUDA_SWITCH}" )
+message ( STATUS  "PRJ_OPENMP_SWITCH=${PRJ_OPENMP_SWITCH}" )
+message ( STATUS  "PRJ_MPI_SWITCH=${PRJ_MPI_SWITCH}" )
+
+if ( PRJ_CUDA_SWITCH )
+    find_package ( CUDAToolkit )
+    if ( CUDAToolkit_FOUND )
+        enable_language( CUDA )
+        set ( CMAKE_CUDA_STANDARD 20 )
+        set ( CMAKE_CUDA_ARCHITECTURES "60;72;75" )
+        list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_CUDA )
+    endif ()
+    message ( STATUS "CMAKE_CUDA_STANDARD=${CMAKE_CUDA_STANDARD}" )
 endif ()
-message ( STATUS "CMAKE_CUDA_STANDARD=${CMAKE_CUDA_STANDARD}" )
+
 find_package ( OpenMP REQUIRED )
 #message ( STATUS  "OpenMP_FOUND=${OpenMP_FOUND}" )
 list ( APPEND PRJ_LIBRARIES OpenMP::OpenMP_CXX )
@@ -44,38 +56,24 @@ message ( STATUS "Python3_FOUND = ${Python3_FOUND} " )
 message ( STATUS "Python3_INCLUDE_DIRS = ${Python3_INCLUDE_DIRS} " )
 message ( STATUS "Python3_LIBRARIES = ${Python3_LIBRARIES} " )
 
-if ( ${Python3_FOUND} )
-    #include_directories(${Python3_INCLUDE_DIRS})
-else()
-    message ( FATAL_ERROR "Python3 not found, please install it." )
-endif()
-
-message ( STATUS "PYTHON_NUMPY_FOUND = ${PYTHON_NUMPY_FOUND} " )
-message ( STATUS "Python3_NumPy_FOUND = ${Python3_NumPy_FOUND} " )
-message ( STATUS "Python3_NumPy_INCLUDE_DIR = ${Python3_NumPy_INCLUDE_DIR} " )
-message ( STATUS "Python3_NumPy_INCLUDE_DIRS = ${Python3_NumPy_INCLUDE_DIRS} " )
-
-list ( APPEND PRJ_INCLUDE_DIRS ${Python3_NumPy_INCLUDE_DIRS} )
+#message ( STATUS "Python3_NumPy_FOUND = ${Python3_NumPy_FOUND} " )
+#message ( STATUS "Python3_NumPy_INCLUDE_DIR = ${Python3_NumPy_INCLUDE_DIR} " )
+#message ( STATUS "Python3_NumPy_INCLUDE_DIRS = ${Python3_NumPy_INCLUDE_DIRS} " )
 
 list ( APPEND PRJ_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} )
+list ( APPEND PRJ_INCLUDE_DIRS ${Python3_NumPy_INCLUDE_DIRS} )
 list ( APPEND PRJ_LIBRARIES ${Python3_LIBRARIES} )
+
+get_directory_property( my_system_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} BUILDSYSTEM_TARGETS )
+get_directory_property( my_import_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} IMPORTED_TARGETS )
+
+message( STATUS "my_system_targets=${my_system_targets}" )
+message( STATUS "my_import_targets=${my_import_targets}" )
 
 message ( STATUS  "MSVC=${MSVC}" )
 if ( MSVC )
     set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME} )
 endif()
-
-option ( CFD_WITH_CUDA "Build Modern CFD(OneFLOW) with CUDA support" ON )
-option ( CFD_WITH_OPENMP "Build Modern CFD(OneFLOW) with OPENMP support" ON )
-option ( CFD_WITH_MPI "Build Modern CFD(OneFLOW) with MPI support" ON )
-
-message ( STATUS  "CFD_WITH_CUDA=${CFD_WITH_CUDA}" )
-message ( STATUS  "CFD_WITH_OPENMP=${CFD_WITH_OPENMP}" )
-message ( STATUS  "CFD_WITH_MPI=${CFD_WITH_MPI}" )
-
-if ( CFD_WITH_CUDA )
-    list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_CUDA )
-endif ()
 
 if ( CFD_WITH_OPENMP )
     list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_OPENMP )
@@ -114,10 +112,12 @@ set_target_properties( ${PROJECT_NAME}
         POSITION_INDEPENDENT_CODE ON
 )
 
+if ( CUDAToolkit_FOUND )
 set_target_properties ( ${PROJECT_NAME}
     PROPERTIES
     CUDA_SEPARABLE_COMPILATION ON
 )
+endif()
 
 target_include_directories ( ${PROJECT_NAME}
     PRIVATE

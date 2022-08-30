@@ -1,0 +1,52 @@
+cmake_minimum_required ( VERSION 3.20 )
+
+project ( testprj )
+
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+message(STATUS "Build directory: ${PROJECT_BINARY_DIR}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
+set ( PRJ_COMPILE_FEATURES )
+set ( PRJ_LIBRARIES )
+set ( PRJ_INCLUDE_DIRS )
+set ( PRJ_COMPILE_DEFINITIONS )
+
+list ( APPEND PRJ_COMPILE_FEATURES cxx_std_20 )
+
+find_package ( CUDAToolkit )
+if ( CUDAToolkit_FOUND )
+    enable_language( CUDA )
+    set ( CMAKE_CUDA_STANDARD 20 )
+    set ( CMAKE_CUDA_ARCHITECTURES "60;72;75" )
+    message ( STATUS "CMAKE_CUDA_STANDARD=${CMAKE_CUDA_STANDARD}" )	
+endif ()
+
+if ( CUDAToolkit_FOUND )
+    list ( APPEND PRJ_COMPILE_DEFINITIONS ENABLE_CUDA )
+endif ()
+
+add_executable ( ${PROJECT_NAME}
+    main.cu
+)
+
+target_include_directories ( ${PROJECT_NAME}
+    PRIVATE
+        ${PRJ_INCLUDE_DIRS}
+)
+
+target_link_libraries( ${PROJECT_NAME} 
+    PRIVATE 
+        ${PRJ_LIBRARIES}
+)
+
+target_compile_features ( ${PROJECT_NAME} 
+    PRIVATE 
+        ${PRJ_COMPILE_FEATURES}
+)
+
+target_compile_definitions ( ${PROJECT_NAME}
+    PRIVATE
+       ${PRJ_COMPILE_DEFINITIONS} 
+)
