@@ -13,6 +13,7 @@ public:
 public:
     static int ni_ghost;
     static int ni_global;
+    static int ni_global_total;
 public:
     static std::vector<int> zonenis;
 };
@@ -30,9 +31,6 @@ public:
 public:
     int zoneId;
     int nZones;
-    int ni_ghost;
-    int ni_global;
-    int ni_global_total;
     int ni;
     int ni_total;
     float * xcoor_global;

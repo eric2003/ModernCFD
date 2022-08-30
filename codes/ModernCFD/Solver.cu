@@ -2,7 +2,7 @@
 #include <string>
 #include <set>
 #include <map>
-#include <mpi.h>
+#include <fstream>
 #include "Cmpi.h"
 #include "Grid.h"
 #include "Geom.h"
@@ -58,7 +58,7 @@ void Visual( std::vector<float> & q, std::vector<float> & theory, std::vector<fl
     // Set the size of output image to 1200x780 pixels
     plt::figure_size(1200, 780);
     // Plot line from given x and y data. Color is selected automatically.
-    plt::plot(x, q, {{"label", "calc"}});
+    plt::plot( x, q, { {"label", "OneFLOW"}, {"marker", "o" } } );
     plt::plot(x, theory, {{"label", "theory"}});
     // Add graph title
     plt::title("1d convection");
@@ -99,7 +99,7 @@ Solver::Solver()
     {
         unsigned int cpu_thread_id = omp_get_thread_num();
         unsigned int num_cpu_threads = omp_get_num_threads();
-        std::printf( "Solver::Solver() CPU thread %d (of %d)\n", cpu_thread_id, num_cpu_threads );
+        //std::printf( "Solver::Solver() CPU thread %d (of %d)\n", cpu_thread_id, num_cpu_threads );
     }
 }
 
@@ -117,7 +117,42 @@ void Solver::Run( CfdPara * cfd_para, Geom * geom )
     this->CfdSolve( cfd_para, geom );
 }
 
-void Solver::InitField( Geom * geom )
+void Solver::AllocateField( Geom * geom )
+{
+    this->q = new float[ geom->ni_total ];
+    this->qn = new float[ geom->ni_total ];
+    this->timestep = new float[ geom->ni_total ];
+}
+
+void Solver::DeallocateField( Geom * geom )
+{
+    delete [] this->q;
+    delete [] this->qn;
+    delete [] this->timestep;
+}
+
+void Solver::InitField( CfdPara * cfd_para, Geom * geom )
+{
+    if ( cfd_para->irestart == 0 )
+    {
+        this->SetInflowField( cfd_para, geom );
+    }
+    else
+    {
+        this->ReadField( cfd_para, geom );
+    }
+}
+
+void Solver::SetInflowField( CfdPara * cfd_para, Geom * geom )
+{
+    for ( int i = 0; i < geom->ni_total; ++ i )
+    {
+        float fm = SquareFun( geom->xcoor[ i ] );
+        this->q[ i ] = fm;
+    }
+}
+
+void Solver::ReadField( CfdPara * cfd_para, Geom * geom )
 {
     for ( int i = 0; i < geom->ni_total; ++ i )
     {
@@ -128,15 +163,12 @@ void Solver::InitField( Geom * geom )
 
 void Solver::CfdSolve( CfdPara * cfd_para, Geom * geom )
 {
-    this->q = new float[ geom->ni_total ];
-    this->qn = new float[ geom->ni_total ];
-    this->timestep = new float[ geom->ni_total ];
-    this->InitField( geom );
+    this->AllocateField( geom );
+    this->InitField( cfd_para, geom );
     this->SolveField( cfd_para, geom );
+    this->SaveField( cfd_para, geom );
     this->Visualize( cfd_para, geom );
-    delete [] this->q;
-    delete [] this->qn;
-    delete [] this->timestep;
+    this->DeallocateField( geom );
 }
 
 void Solver::Timestep( CfdPara * cfd_para, Geom * geom )
@@ -269,8 +301,8 @@ void Solver::SolveField( CfdPara * cfd_para, Geom * geom )
             int gpu_id = -1;
             cudaSetDevice( cpu_thread_id % Cmpi::num_gpus );
             cudaGetDevice( &gpu_id );
-            std::printf("Solver::SolveField CPU process %d (of %d) CPU thread %d (of %d) uses CUDA device %d\n", \
-                Cmpi::pid, Cmpi::nproc, cpu_thread_id, num_cpu_threads, gpu_id);
+            //std::printf("Solver::SolveField CPU process %d (of %d) CPU thread %d (of %d) uses CUDA device %d\n", \
+            //    Cmpi::pid, Cmpi::nproc, cpu_thread_id, num_cpu_threads, gpu_id);
 
             CfdCopyVector( qn, q, geom->ni_total );
             //CfdCopyVectorSerial( qn, q, geom->ni_total );
@@ -322,6 +354,19 @@ void Solver::BoundaryInterface( float * q, Geom * geom )
     }
 }
 
+void Solver::SaveField( CfdPara * cfd_para, Geom * geom )
+{
+    char buffer[ 50 ];
+    std::sprintf( buffer, "./flow%d.dat", geom->zoneId );
+    std::fstream file;
+    file.open( buffer, std::fstream::out | std::fstream::binary );
+
+    int ni_total = geom->ni_total;
+    file.write(reinterpret_cast<char *>(&ni_total), sizeof(int) );
+    file.write(reinterpret_cast<char *>(this->q), ni_total * sizeof(float) );
+    file.close();
+}
+
 void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
 {
     char buffer[ 50 ];
@@ -342,7 +387,7 @@ void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
             int ni_tmp = Geom_t::zonenis[ ip ];
-            int ni_total_tmp = ni_tmp + geom->ni_ghost;
+            int ni_total_tmp = ni_tmp + Geom_t::ni_ghost;
 
             qvec[ ip ].resize( ni_total_tmp );
         }
@@ -351,7 +396,7 @@ void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
             int ni_tmp = Geom_t::zonenis[ ip ];
-            int ni_total_tmp = ni_tmp + geom->ni_ghost;
+            int ni_total_tmp = ni_tmp + Geom_t::ni_ghost;
             MPI_Recv( qvec[ ip ].data(), ni_total_tmp, MPI_FLOAT, ip, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         }
 
@@ -366,11 +411,12 @@ void Solver::Visualize( CfdPara * cfd_para, Geom * geom )
                 q_global.insert( q_global.end(), qvec[ ip ].begin() + 2, qvec[ ip ].end() - 1 );
             }
         }
-        x_global.insert( x_global.end(), geom->xcoor_global + 1, geom->xcoor_global + geom->ni_global + 1 );
+        x_global.insert( x_global.end(), geom->xcoor_global + 1, geom->xcoor_global + Geom_t::ni_global + 1 );
         std::vector<float> theory;
         theory.resize( x_global.size() );
         Theory( cfd_para->simu_time, cfd_para->cspeed, theory, x_global );
-        Visual( q_global, theory, x_global, "./cfd.png" );
+        //Visual( q_global, theory, x_global, "./cfd.png" );
+        Visual( q_global, theory, x_global, "./cfd.pdf" );
     }
 }
 

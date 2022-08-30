@@ -17,6 +17,7 @@ public:
     void Init( Geom * geom );
 public:
     int nt;
+    int irestart; //0 restart, 1 continue
     float cfl;
     float simu_time;
     float cspeed;
