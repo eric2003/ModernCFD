@@ -8,6 +8,11 @@ endif()
 message(STATUS "Build directory: ${PROJECT_BINARY_DIR}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+list ( INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/cmake" )
+
+include(GNUInstallDirs)
+include(util)
+
 set ( PRJ_COMPILE_FEATURES )
 set ( PRJ_COMPILE_DEFINITIONS )
 set ( PRJ_LIBRARIES )
