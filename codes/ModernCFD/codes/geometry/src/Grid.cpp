@@ -4,7 +4,6 @@
 #include <map>
 #include <iostream>
 #include <algorithm>
-#include <mpi.h>
 #include "Cmpi.h"
 #include "Geom.h"
 
@@ -285,7 +284,7 @@ void BoundarySolver::Init( int zoneId, int nZones, int ni )
     int ishift = 0;
     for ( int iZone = 0; iZone < nZones; ++ iZone )
     {
-        int ni_local = Geom_t::zonenis[ iZone ];
+        int ni_local = Geom_t::zone_nis[ iZone ];
         int local_face_id0 = 1 + 0;
         int local_face_id1 = 1 + ni_local - 1;
         int global_face_id0 = ishift + 1 + 0;
@@ -534,6 +533,7 @@ void InterfaceSolver::PrepareSendData( float * q )
 void InterfaceSolver::SwapData( float * q )
 {
     PrepareSendData( q );
+#ifdef PRJ_ENABLE_MPI
     for ( int i = 0; i < this->neighbor_datas.size(); ++ i )
     {
         IData & idata = this->neighbor_datas[ i ];
@@ -575,4 +575,5 @@ void InterfaceSolver::SwapData( float * q )
             MPI_Send(idata.send_qs.data(), n, MPI_FLOAT, ip, tag, MPI_COMM_WORLD);
         }
     }
+#endif
 }

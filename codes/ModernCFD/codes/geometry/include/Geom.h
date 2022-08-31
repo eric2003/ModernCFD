@@ -15,7 +15,9 @@ public:
     static int ni_global;
     static int ni_global_total;
 public:
-    static std::vector<int> zonenis;
+    static std::vector<int> zone_nis;
+    static std::vector<int> proc_ids;
+    static std::vector<int> zone_ids;
 };
 
 class Geom
