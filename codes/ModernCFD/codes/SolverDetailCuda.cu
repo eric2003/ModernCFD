@@ -1,28 +1,20 @@
-#include "Solver.h"
-#include <string>
-#include <set>
-#include <map>
-#include <fstream>
+#ifdef PRJ_ENABLE_CUDA
 #include "Cmpi.h"
-#include "Grid.h"
-#include "Geom.h"
-#include "CfdPara.h"
 #include <omp.h>
+#include <cstdio>
 #include <cuda_runtime.h>
 
 void SolverInitCuda()
 {
-#ifdef PRJ_ENABLE_CUDA
     cudaGetDeviceCount( &Cmpi::num_gpus );
     if ( Cmpi::num_gpus < 1 ) {
         std::printf("no CUDA capable devices were detected\n");
         //std::exit(1);
     }
-#endif
+
     std::printf("number of host CPUs:\t%d\n", omp_get_num_procs());
     std::printf("number of CUDA devices:\t%d\n", Cmpi::num_gpus);
 
-#ifdef PRJ_ENABLE_CUDA
     for ( int i = 0; i < Cmpi::num_gpus; ++ i )
     {
         cudaDeviceProp dprop;
@@ -31,7 +23,6 @@ void SolverInitCuda()
     }
 
     std::printf("---------------------------\n");
-#endif
 
     int nCpuThreads = 8;
     omp_set_num_threads( nCpuThreads );
@@ -47,14 +38,11 @@ void SolverInitCuda()
 
 void SetDeviceCuda( int cpu_thread_id )
 {
-#ifdef PRJ_ENABLE_CUDA
     int gpu_id = -1;
     cudaSetDevice( cpu_thread_id % Cmpi::num_gpus );
     cudaGetDevice( &gpu_id );
-#endif
 }
 
-#ifdef PRJ_ENABLE_CUDA
 __global__ void GpuCfdCopyVector( float *a, const float *b, int numElements )
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -75,12 +63,9 @@ __global__ void GpuCfdScalarUpdate( float * q, const float * qn, float c, const 
         q[ i ] = qn[ i ] - cfl * ( qn[ i ] - qn[ i - 1 ] );
     }
 }
-#endif
-
 
 void CfdCopyVectorCuda( float * a, float * b, int ni )
 {
-#ifdef PRJ_ENABLE_CUDA
     std::size_t nSize = ni * sizeof(float);
 
     float * dev_a;
@@ -101,12 +86,10 @@ void CfdCopyVectorCuda( float * a, float * b, int ni )
     cudaMemcpy(a, dev_a, nSize, cudaMemcpyDeviceToHost);
     cudaFree(dev_a);
     cudaFree(dev_b);
-#endif
 }
 
 void CfdScalarUpdateCuda( float * q, float * qn, float c, float * timestep, float * ds, int ni )
 {
-#ifdef PRJ_ENABLE_CUDA
     float * dev_q;
     float * dev_qn;
     float * dev_timestep;
@@ -137,6 +120,5 @@ void CfdScalarUpdateCuda( float * q, float * qn, float c, float * timestep, floa
     cudaFree(dev_qn);
     cudaFree(dev_timestep);
     cudaFree(dev_ds);
-#endif
 }
-
+#endif

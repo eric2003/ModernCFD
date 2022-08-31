@@ -18,12 +18,16 @@ Cmpi::~Cmpi()
 
 void Cmpi::Init(int argc, char **argv)
 {
+#ifdef PRJ_ENABLE_MPI
     MPI_Init( &argc, &argv ); 
     MPI_Comm_rank( MPI_COMM_WORLD, &Cmpi::pid ); 
-    MPI_Comm_size( MPI_COMM_WORLD, &Cmpi::nproc ); 
+    MPI_Comm_size( MPI_COMM_WORLD, &Cmpi::nproc );
+#endif
 }
 
 void Cmpi::Finalize()
 {
+#ifdef PRJ_ENABLE_MPI
     MPI_Finalize();
+#endif
 }

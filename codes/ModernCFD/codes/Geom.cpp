@@ -6,7 +6,9 @@
 int Geom_t::ni_ghost = 2;
 int Geom_t::ni_global = 1;
 int Geom_t::ni_global_total = -1;
-std::vector<int> Geom_t::zonenis;
+std::vector<int> Geom_t::zone_nis;
+std::vector<int> Geom_t::proc_ids;
+std::vector<int> Geom_t::zone_ids;
 
 Geom_t::Geom_t()
 {
@@ -28,19 +30,19 @@ void Geom_t::Init()
     Geom_t::ni_global_total = Geom_t::ni_global + Geom_t::ni_ghost;
 
     int nZones = Cmpi::nproc;
-    Geom_t::zonenis.resize( nZones );
+    Geom_t::zone_nis.resize( nZones );
     int grid_ni = ( Geom_t::ni_global + nZones - 1 ) / nZones;
     int ni_last = Geom_t::ni_global - ( nZones - 1 ) * ( grid_ni - 1 );
 
     for ( int i = 0; i < nZones - 1; ++ i )
     {
-        Geom_t::zonenis[i] = grid_ni;
+        Geom_t::zone_nis[i] = grid_ni;
     }
-    Geom_t::zonenis[nZones - 1] = ni_last;
+    Geom_t::zone_nis[nZones - 1] = ni_last;
     std::printf( "zone ni----------------------\n" );
     for ( int i = 0; i < nZones; ++ i )
     {
-        std::printf( "%d ", Geom_t::zonenis[i] );
+        std::printf( "%d ", Geom_t::zone_nis[i] );
     }
     std::printf( "\n" );
 }
@@ -63,7 +65,7 @@ void Geom::Init()
 {
     this->nZones = Cmpi::nproc;
     this->zoneId = Cmpi::pid;
-    this->ni = Geom_t::zonenis[ this->zoneId ];
+    this->ni = Geom_t::zone_nis[ this->zoneId ];
     this->ni_total = this->ni + Geom_t::ni_ghost;
     this->xcoor_global = 0;
     this->xcoor = new float[ this->ni_total ];
@@ -108,18 +110,22 @@ void Geom::GenerateGrid()
             this->xcoor[ i ] = this->xcoor_global[ i ];
         }
         int istart = 0;
+        #ifdef PRJ_ENABLE_MPI
         for ( int ip = 1; ip < Cmpi::nproc; ++ ip )
         {
-            int ni_tmp = Geom_t::zonenis[ ip ];
+            int ni_tmp = Geom_t::zone_nis[ ip ];
             int ni_total_tmp = ni_tmp + Geom_t::ni_ghost;
             istart += ( ni_tmp - 1 );
             float * source_start = this->xcoor_global + istart;
             MPI_Send( source_start, ni_total_tmp, MPI_FLOAT, ip, 0, MPI_COMM_WORLD );
         }
+        #endif
     }
     else
     {
+        #ifdef PRJ_ENABLE_MPI
         MPI_Recv(this->xcoor, this->ni_total, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        #endif
     }
 
     std::printf("print xcoor: process id = %d Cmpi::nproc = %d\n", Cmpi::pid, Cmpi::nproc );

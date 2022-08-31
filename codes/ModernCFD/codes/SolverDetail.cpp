@@ -36,7 +36,7 @@ void CfdScalarUpdate( float * q, float * qn, float c, float * timestep, float * 
 #ifdef PRJ_ENABLE_CUDA
     CfdScalarUpdateCuda( q, qn, c, timestep, ds, ni );
 #else
-    CfdScalarUpdateCuda( q, qn, c, timestep, ds, ni );
+    CfdScalarUpdateCpu( q, qn, c, timestep, ds, ni );
 #endif
 
 }

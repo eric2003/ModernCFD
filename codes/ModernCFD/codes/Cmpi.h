@@ -1,6 +1,7 @@
 #pragma once
+#ifdef PRJ_ENABLE_MPI
 #include <mpi.h>
-
+#endif
 class Cmpi
 {
 public:

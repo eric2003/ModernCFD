@@ -1,5 +1,4 @@
 #pragma once
-#include <mpi.h>
 
 class Simu
 {

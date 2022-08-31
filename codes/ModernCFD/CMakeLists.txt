@@ -15,16 +15,6 @@ set ( PRJ_INCLUDE_DIRS )
 
 list ( APPEND PRJ_COMPILE_FEATURES cxx_std_20 )
 
-find_package ( MPI )
-
-message ( STATUS  "MPI_FOUND=${MPI_FOUND}" )
-message ( STATUS  "MPI_CXX_INCLUDE_DIRS=${MPI_CXX_INCLUDE_DIRS}" )
-message ( STATUS  "MPI_LIBRARIES=${MPI_LIBRARIES}" )
-if ( MPI_FOUND )
-    list ( APPEND PRJ_INCLUDE_DIRS ${MPI_CXX_INCLUDE_DIRS} )
-    list ( APPEND PRJ_LIBRARIES ${MPI_LIBRARIES} )
-endif ()
-
 option ( PRJ_CUDA_SWITCH "Build Modern CFD(OneFLOW) with CUDA support" ON )
 option ( PRJ_OPENMP_SWITCH "Build Modern CFD(OneFLOW) with OPENMP support" ON )
 option ( PRJ_MPI_SWITCH "Build Modern CFD(OneFLOW) with MPI support" ON )
@@ -33,12 +23,17 @@ message ( STATUS  "PRJ_CUDA_SWITCH=${PRJ_CUDA_SWITCH}" )
 message ( STATUS  "PRJ_OPENMP_SWITCH=${PRJ_OPENMP_SWITCH}" )
 message ( STATUS  "PRJ_MPI_SWITCH=${PRJ_MPI_SWITCH}" )
 
-if ( PRJ_OPENMP_SWITCH )
-    list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_OPENMP )
-endif ()
-
 if ( PRJ_MPI_SWITCH )
-    list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_MPI )
+    find_package ( MPI )
+    
+    message ( STATUS  "MPI_FOUND=${MPI_FOUND}" )
+    message ( STATUS  "MPI_CXX_INCLUDE_DIRS=${MPI_CXX_INCLUDE_DIRS}" )
+    message ( STATUS  "MPI_LIBRARIES=${MPI_LIBRARIES}" )
+    if ( MPI_FOUND )
+        list ( APPEND PRJ_INCLUDE_DIRS ${MPI_CXX_INCLUDE_DIRS} )
+        list ( APPEND PRJ_LIBRARIES ${MPI_LIBRARIES} )
+        list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_MPI )
+    endif ()
 endif ()
 
 if ( PRJ_CUDA_SWITCH )
@@ -52,11 +47,19 @@ if ( PRJ_CUDA_SWITCH )
     message ( STATUS "CMAKE_CUDA_STANDARD=${CMAKE_CUDA_STANDARD}" )
 endif ()
 
-find_package ( OpenMP REQUIRED )
-#message ( STATUS  "OpenMP_FOUND=${OpenMP_FOUND}" )
-list ( APPEND PRJ_LIBRARIES OpenMP::OpenMP_CXX )
+if ( PRJ_OPENMP_SWITCH )
+    list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_OPENMP )
+endif ()
 
-set ( CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=${OpenMP_CXX_FLAGS}" )
+if ( PRJ_OPENMP_SWITCH )
+    find_package ( OpenMP )
+    message ( STATUS  "OpenMP_FOUND=${OpenMP_FOUND}" )
+    if ( OpenMP_FOUND )
+        list ( APPEND PRJ_LIBRARIES OpenMP::OpenMP_CXX )
+        list ( APPEND PRJ_COMPILE_DEFINITIONS PRJ_ENABLE_OPENMP )
+        set ( CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=${OpenMP_CXX_FLAGS}" )
+    endif ()
+endif ()
 
 find_package ( Python3 COMPONENTS Interpreter Development NumPy )
 
@@ -78,69 +81,9 @@ get_directory_property( my_import_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} 
 message( STATUS "my_system_targets=${my_system_targets}" )
 message( STATUS "my_import_targets=${my_import_targets}" )
 
-message ( STATUS  "MSVC=${MSVC}" )
+message ( STATUS "MSVC=${MSVC}" )
 if ( MSVC )
     set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME} )
 endif()
 
-set( HEADER_LIST 
-    Grid.h
-    Geom.h
-    Cmpi.h
-    CfdPara.h
-    Simu.h
-    Solver.h
-    SolverDetail.h
-    SolverDetailCpu.h
-    SolverDetailCuda.h
-)
-
-set( SRC_LIST 
-    main.cpp
-    Grid.cpp
-    Geom.cpp
-    Cmpi.cpp
-    CfdPara.cpp
-    Simu.cpp
-    Solver.cpp
-    SolverDetail.cpp
-    SolverDetailCpu.cpp
-    SolverDetailCuda.cu
-)
-
-add_executable ( ${PROJECT_NAME}
-    ${HEADER_LIST}
-    ${SRC_LIST}
-)
-
-set_target_properties( ${PROJECT_NAME}
-    PROPERTIES 
-        POSITION_INDEPENDENT_CODE ON
-)
-
-if ( CUDAToolkit_FOUND )
-set_target_properties ( ${PROJECT_NAME}
-    PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-)
-endif()
-
-target_include_directories ( ${PROJECT_NAME}
-    PRIVATE
-        ${PRJ_INCLUDE_DIRS}
-)
-
-target_link_libraries( ${PROJECT_NAME} 
-    PRIVATE 
-        ${PRJ_LIBRARIES}
-)
-
-target_compile_features ( ${PROJECT_NAME} 
-    PRIVATE 
-        ${PRJ_COMPILE_FEATURES}
-)
-
-target_compile_definitions ( ${PROJECT_NAME}
-    PRIVATE
-       ${PRJ_COMPILE_DEFINITIONS} 
-)
+add_subdirectory ( codes ${PROJECT_NAME} )
