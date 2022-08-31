@@ -4,8 +4,6 @@
 #include <map>
 #include <string>
 
-class CfdPara;
-
 class Grid
 {
 public:
